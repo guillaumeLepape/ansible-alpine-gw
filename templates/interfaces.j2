@@ -1,0 +1,14 @@
+# Managed by Ansible — do not edit manually
+auto lo
+iface lo inet loopback
+
+auto {{ network_interface }}
+iface {{ network_interface }} inet static
+    address {{ network_ipv4_address }}
+    netmask {{ network_ipv4_netmask }}
+    gateway {{ network_ipv4_gateway }}
+
+auto {{ network_interface }}
+iface {{ network_interface }} inet6 static
+    address {{ network_ipv6_address }}
+    gateway {{ network_ipv6_gateway }}

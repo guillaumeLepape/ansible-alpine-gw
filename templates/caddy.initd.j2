@@ -1,0 +1,25 @@
+#!/sbin/openrc-run
+# Managed by Ansible — do not edit manually
+
+name="caddy"
+description="Caddy web server"
+supervisor="supervise-daemon"
+
+command="/usr/sbin/caddy"
+command_args="run --config {{ caddy_config_dir }}/Caddyfile --adapter caddyfile"
+supervise_daemon_args="
+  --user caddy
+  --group caddy
+  --stdout {{ caddy_log_dir }}/caddy.log
+  --stderr {{ caddy_log_dir }}/caddy.log
+"
+
+# Caddy uses XDG_DATA_HOME for certificate storage
+export HOME="/var/lib/caddy"
+export XDG_DATA_HOME="/var/lib/caddy"
+
+depend() {
+    need net
+    use dns logger
+    after firewall
+}
