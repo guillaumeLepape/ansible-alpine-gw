@@ -1,0 +1,14 @@
+# Vault password — never commit this.
+.vault_pass
+
+# Inventory contains real host IPs — use inventory.ini.example as a template.
+inventory.ini
+
+# Ansible runtime artifacts
+*.retry
+.ansible/
+
+# Editor / OS noise
+.DS_Store
+*.swp
+*~

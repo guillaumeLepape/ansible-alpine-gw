@@ -1,0 +1,145 @@
+- name: Deploy Alpine Linux gateway
+  hosts: alpine_gw
+  become: true
+
+  tasks:
+    # ── Prerequisites ──────────────────────────────────────────────────────────
+    - name: Configure apk repositories
+      ansible.builtin.template:
+        src: templates/apk_repositories.j2
+        dest: /etc/apk/repositories
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Update apk cache
+      community.general.apk:
+        update_cache: true
+
+    - name: Install required packages
+      community.general.apk:
+        name:
+          - nftables
+          - caddy
+          - libcap   # provides setcap, needed to grant Caddy port-binding capability
+        state: present
+
+    - name: Configure network interfaces
+      ansible.builtin.template:
+        src: templates/interfaces.j2
+        dest: /etc/network/interfaces
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart networking
+
+    # ── Caddy — user and directories ───────────────────────────────────────────
+    - name: Create caddy group
+      ansible.builtin.group:
+        name: caddy
+        system: true
+        state: present
+
+    - name: Create caddy system user
+      ansible.builtin.user:
+        name: caddy
+        group: caddy
+        system: true
+        shell: /sbin/nologin
+        home: /var/lib/caddy
+        create_home: true
+        comment: Caddy web server
+
+    - name: Create Caddy config directory
+      ansible.builtin.file:
+        path: "{{ caddy_config_dir }}"
+        state: directory
+        owner: root
+        group: caddy
+        mode: "0750"
+
+    - name: Create Caddy log directory
+      ansible.builtin.file:
+        path: "{{ caddy_log_dir }}"
+        state: directory
+        owner: caddy
+        group: caddy
+        mode: "0750"
+
+    # ── Caddy — capabilities ───────────────────────────────────────────────────
+    # Must be set so the unprivileged caddy user can bind ports 80/443.
+    # setcap is not sticky across package upgrades — re-applied on every run.
+    - name: Grant Caddy capability to bind privileged ports
+      community.general.capabilities:
+        path: /usr/sbin/caddy
+        capability: cap_net_bind_service+ep
+        state: present
+
+    # ── Caddy — configuration ──────────────────────────────────────────────────
+    - name: Deploy Caddyfile
+      ansible.builtin.template:
+        src: templates/Caddyfile.j2
+        dest: "{{ caddy_config_dir }}/Caddyfile"
+        owner: root
+        group: caddy
+        mode: "0640"
+        validate: /usr/sbin/caddy validate --config %s --adapter caddyfile
+      notify: Restart Caddy
+
+    - name: Deploy Caddy OpenRC init script
+      ansible.builtin.template:
+        src: templates/caddy.initd.j2
+        dest: /etc/init.d/caddy
+        owner: root
+        group: root
+        mode: "0755"
+      notify: Restart Caddy
+
+    - name: Enable and start Caddy service
+      ansible.builtin.service:
+        name: caddy
+        enabled: true
+        state: started
+
+    # ── nftables — applied last to avoid dropping the Ansible SSH session ──────
+    - name: Deploy nftables ruleset
+      ansible.builtin.template:
+        src: templates/nftables.conf.j2
+        dest: /etc/nftables.d/firewall.nft
+        owner: root
+        group: root
+        mode: "0600"
+        validate: /usr/sbin/nft -c -f %s
+      notify: Apply nftables ruleset
+
+    - name: Enable and start nftables service
+      ansible.builtin.service:
+        name: nftables
+        enabled: true
+        state: started
+
+    - name: Show active ruleset
+      ansible.builtin.command: /usr/sbin/nft list ruleset
+      register: ruleset_output
+      changed_when: false
+
+    - name: Print active ruleset
+      ansible.builtin.debug:
+        var: ruleset_output.stdout_lines
+
+  # ── Handlers ──────────────────────────────────────────────────────────────────
+  handlers:
+    - name: Restart networking
+      ansible.builtin.service:
+        name: networking
+        state: restarted
+
+    - name: Restart Caddy
+      ansible.builtin.service:
+        name: caddy
+        state: restarted
+
+    # nft -f is transactional so the flush+reload is atomic.
+    - name: Apply nftables ruleset
+      ansible.builtin.command: /usr/sbin/nft -f /etc/nftables.d/firewall.nft
+      changed_when: true

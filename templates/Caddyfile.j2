@@ -1,0 +1,29 @@
+# Managed by Ansible — do not edit manually
+{
+    email {{ caddy_acme_email }}
+}
+
+{% for site in caddy_sites %}
+{{ site.domain }} {
+    reverse_proxy {{ site.backend_host }}:{{ site.backend_port }} {
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-Host {host}
+    }
+
+    encode zstd gzip
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        Referrer-Policy no-referrer
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Permissions-Policy "geolocation=(), camera=(), microphone=()"
+        Content-Security-Policy "default-src 'self'; frame-ancestors 'none'; form-action 'self';"
+        -Server
+        -X-Powered-By
+        -Via
+    }
+}
+{% endfor %}
