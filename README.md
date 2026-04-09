@@ -40,7 +40,16 @@ These live in the encrypted vault and are never committed in plain text:
 | `network_ipv6_address` / `network_ipv6_gateway` | Static IPv6 config |
 | `ssh_allowed_ip` | Only IPv4 address allowed to connect via SSH |
 | `caddy_acme_email` | Email for ACME/Let's Encrypt registration |
-| `caddy_sites` | List of `{domain, backend_host, backend_port}` entries |
+| `caddy_sites` | List of site entries — see below |
+
+Each entry in `caddy_sites` supports:
+
+| Field | Required | Description |
+|---|---|---|
+| `domain` | yes | Public domain name |
+| `backend_host` | yes | Backend IP or hostname |
+| `backend_port` | yes | Backend port |
+| `csp` | no | Custom `Content-Security-Policy` header value |
 
 ## Dependencies
 
