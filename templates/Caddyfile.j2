@@ -20,7 +20,7 @@
         X-Content-Type-Options nosniff
         X-Frame-Options DENY
         Permissions-Policy "geolocation=(), camera=(), microphone=()"
-        Content-Security-Policy "default-src 'self'; frame-ancestors 'none'; form-action 'self';"
+        Content-Security-Policy "{{ site.csp | default("default-src 'self'; frame-ancestors 'none'; form-action 'self';") }}"
         -Server
         -X-Powered-By
         -Via
