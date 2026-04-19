@@ -3,10 +3,7 @@ auto lo
 iface lo inet loopback
 
 auto {{ network_interface }}
-iface {{ network_interface }} inet static
-    address {{ network_ipv4_address }}
-    netmask {{ network_ipv4_netmask }}
-    gateway {{ network_ipv4_gateway }}
+iface {{ network_interface }} inet dhcp
 
 auto {{ network_interface }}
 iface {{ network_interface }} inet6 static

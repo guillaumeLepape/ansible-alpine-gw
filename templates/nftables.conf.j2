@@ -26,7 +26,7 @@ table inet filter {
         ip6 nexthdr  icmpv6 limit rate 20/second accept
 
         # ── SSH — allowlist only ──────────────────────────────────────────────
-        tcp dport {{ ssh_port }} ip saddr {{ ssh_allowed_ip }} accept
+        tcp dport {{ ssh_port }} ip saddr {{ ssh_allowed_cidr }} accept
         tcp dport {{ ssh_port }} drop
 
         # ── Web traffic (Caddy) ───────────────────────────────────────────────
