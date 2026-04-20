@@ -3,6 +3,7 @@ alias r := run
 alias c := check
 alias ve := vault_edit
 alias vv := vault_view
+alias gc := gen_clients
 
 install:
     ansible-galaxy collection install -r requirements.yml
@@ -18,3 +19,6 @@ vault_edit:
 
 vault_view:
     ansible-vault view group_vars/alpine_gw/vault.yml
+
+gen_clients:
+    ansible-playbook -i inventory.ini gen-clients.yml

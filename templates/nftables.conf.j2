@@ -3,41 +3,51 @@
 
 flush ruleset
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Filter table — inet handles both IPv4 and IPv6
-# Caddy binds directly on ports {{ http_port }}/{{ https_port }} (CAP_NET_BIND_SERVICE); no NAT needed.
-# ─────────────────────────────────────────────────────────────────────────────
 table inet filter {
     chain input {
         type filter hook input priority filter; policy drop;
 
-        # Loopback — always allow
         iif "lo" accept
 
-        # Connection tracking: pass established/related, drop invalid early
         ct state vmap {
             established : accept,
             related     : accept,
             invalid     : drop
         }
 
-        # ICMP / ICMPv6 — rate-limited to avoid floods
         ip  protocol icmp   limit rate 20/second accept
         ip6 nexthdr  icmpv6 limit rate 20/second accept
 
-        # ── SSH — allowlist only ──────────────────────────────────────────────
+        # ── SSH — LAN only ────────────────────────────────────────────────────
         tcp dport {{ ssh_port }} ip saddr {{ ssh_allowed_cidr }} accept
         tcp dport {{ ssh_port }} drop
 
         # ── Web traffic (Caddy) ───────────────────────────────────────────────
         tcp dport { {{ http_port }}, {{ https_port }} } accept
+
+        # ── WireGuard ─────────────────────────────────────────────────────────
+        udp dport {{ wg_port }} accept
     }
 
     chain forward {
         type filter hook forward priority filter; policy drop;
+
+        # VPN → LAN
+        iifname "{{ wg_interface }}" oifname "{{ network_interface }}" accept
+        # LAN → VPN (established/related only)
+        iifname "{{ network_interface }}" oifname "{{ wg_interface }}" ct state established,related accept
     }
 
     chain output {
         type filter hook output priority filter; policy accept;
+    }
+}
+
+table ip nat {
+    chain postrouting {
+        type nat hook postrouting priority srcnat; policy accept;
+
+        # Masquerade VPN traffic going to LAN
+        iifname "{{ wg_interface }}" oifname "{{ network_interface }}" masquerade
     }
 }
