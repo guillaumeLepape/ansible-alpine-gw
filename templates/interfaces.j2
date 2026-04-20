@@ -7,5 +7,5 @@ iface {{ network_interface }} inet dhcp
 
 auto {{ network_interface }}
 iface {{ network_interface }} inet6 static
-    address {{ network_ipv6_address }}
+    address {{ network_ipv6_address }}/{{ network_ipv6_subnet }}
     gateway {{ network_ipv6_gateway }}

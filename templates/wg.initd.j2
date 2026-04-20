@@ -1,0 +1,21 @@
+#!/sbin/openrc-run
+# Managed by Ansible — do not edit manually
+
+description="WireGuard tunnel for {{ wg_interface }}"
+
+depend() {
+    need net
+    after firewall
+}
+
+start() {
+    ebegin "Starting WireGuard {{ wg_interface }}"
+    wg-quick up {{ wg_interface }}
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping WireGuard {{ wg_interface }}"
+    wg-quick down {{ wg_interface }}
+    eend $?
+}

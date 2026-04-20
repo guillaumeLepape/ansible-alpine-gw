@@ -1,0 +1,25 @@
+- name: Generate WireGuard client configs
+  hosts: alpine_gw
+  become: false
+
+  tasks:
+    - name: Generate client config files locally
+      ansible.builtin.template:
+        src: wg_client.conf.j2
+        dest: "{{ playbook_dir }}/clients/{{ peer.name }}.conf"
+        mode: "0600"
+      loop: "{{ wg_peers }}"
+      no_log: true
+      loop_control:
+        loop_var: peer
+      delegate_to: localhost
+
+    - name: Generate QR code PNGs locally
+      ansible.builtin.command:
+        cmd: qrencode -t PNG -o {{ playbook_dir }}/clients/{{ peer.name }}.png -r {{ playbook_dir }}/clients/{{ peer.name }}.conf
+      loop: "{{ wg_peers }}"
+      no_log: true
+      loop_control:
+        loop_var: peer
+      delegate_to: localhost
+      changed_when: true

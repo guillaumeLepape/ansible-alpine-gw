@@ -12,3 +12,10 @@ https_port: 443
 # ── Caddy ──────────────────────────────────────────────────────────────────────
 caddy_config_dir: /etc/caddy
 caddy_log_dir: /var/log/caddy
+
+# ── WireGuard ──────────────────────────────────────────────────────────────────
+wg_interface: wg0
+wg_port: 51820
+wg_server_address: 10.10.10.1/24
+wg_lan_cidr: 192.168.1.0/24
+wg_endpoint: "{{ network_ipv6_address }}"
