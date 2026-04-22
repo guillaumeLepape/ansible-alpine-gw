@@ -1,6 +1,7 @@
 # Managed by Ansible — do not edit manually
 {
     email {{ caddy_acme_email }}
+    admin 0.0.0.0:{{ caddy_admin_port }}
 }
 
 {% for site in caddy_sites %}

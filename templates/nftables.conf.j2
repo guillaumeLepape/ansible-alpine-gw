@@ -25,6 +25,10 @@ table inet filter {
         # ── Web traffic (Caddy) ───────────────────────────────────────────────
         tcp dport { {{ http_port }}, {{ https_port }} } accept
 
+        # ── Caddy admin API ───────────────────────────────────────────────────
+        tcp dport {{ caddy_admin_port }} ip saddr {{ lan_subnet }} accept
+        tcp dport {{ caddy_admin_port }} drop
+
         # ── WireGuard ─────────────────────────────────────────────────────────
         udp dport {{ wg_port }} accept
     }
